@@ -1,3 +1,11 @@
+using System.Collections.Concurrent;
+
+var users = new ConcurrentDictionary<int, User>
+{
+    [1] = new User(1, "Alice", "alice@example.com"),
+    [2] = new User(2, "Bob", "bob@example.com")
+};
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,29 +24,36 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapGet("/", () => "root!");
 
-app.MapGet("/weatherforecast", () =>
+
+app.MapGet("/users", () => Results.Ok(users.Values));
+
+app.MapGet("/users/{id}", (int id) =>
+    users.TryGetValue(id, out var user) ? Results.Ok(user) : Results.NotFound());
+
+app.MapPost("/users", (User newUser) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    if (!users.TryAdd(newUser.Id, newUser))
+        return Results.Conflict("User with this ID already exists.");
+
+    return Results.Created($"/users/{newUser.Id}", newUser);
+});
+
+app.MapPut("/users/{id}", (int id, User updatedUser) =>
+{
+    if (!users.ContainsKey(id))
+        return Results.NotFound();
+
+    users[id] = updatedUser;
+    return Results.Ok(updatedUser);
+});
+
+app.MapDelete("/users/{id}", (int id) =>
+{
+    return users.TryRemove(id, out _) ? Results.NoContent() : Results.NotFound();
+});
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+record User(int Id, string Name, string Email);
