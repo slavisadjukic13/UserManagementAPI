@@ -1,12 +1,11 @@
-using System.Collections.Concurrent;
-
-var users = new ConcurrentDictionary<int, User>
-{
-    [1] = new User(1, "Alice", "alice@example.com"),
-    [2] = new User(2, "Bob", "bob@example.com")
-};
+using Microsoft.EntityFrameworkCore;
+using UserManagementAPI.Data;
+using UserManagementAPI.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -22,38 +21,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
+
 app.UseHttpsRedirection();
 
-app.MapGet("/", () => "root!");
-
-
-app.MapGet("/users", () => Results.Ok(users.Values));
-
-app.MapGet("/users/{id}", (int id) =>
-    users.TryGetValue(id, out var user) ? Results.Ok(user) : Results.NotFound());
-
-app.MapPost("/users", (User newUser) =>
-{
-    if (!users.TryAdd(newUser.Id, newUser))
-        return Results.Conflict("User with this ID already exists.");
-
-    return Results.Created($"/users/{newUser.Id}", newUser);
-});
-
-app.MapPut("/users/{id}", (int id, User updatedUser) =>
-{
-    if (!users.ContainsKey(id))
-        return Results.NotFound();
-
-    users[id] = updatedUser;
-    return Results.Ok(updatedUser);
-});
-
-app.MapDelete("/users/{id}", (int id) =>
-{
-    return users.TryRemove(id, out _) ? Results.NoContent() : Results.NotFound();
-});
+app.MapUserEndpoints();
 
 app.Run();
-
-record User(int Id, string Name, string Email);
