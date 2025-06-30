@@ -16,6 +16,7 @@ public static class RequestLogEndpoints
         {
             var logs = await db.RequestLogs
                 .OrderByDescending(r => r.Timestamp)
+                .Take(100) // limit to last 100
                 .ToListAsync();
 
             return TypedResults.Ok(logs);
