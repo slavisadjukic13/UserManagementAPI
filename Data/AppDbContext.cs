@@ -11,5 +11,7 @@ namespace UserManagementAPI.Data
         }
 
         public DbSet<User> Users => Set<User>(); // PascalCase for property name
+        public DbSet<RequestLog> RequestLogs { get; set; }
+
     }
 }
