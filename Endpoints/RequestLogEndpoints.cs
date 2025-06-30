@@ -10,7 +10,7 @@ public static class RequestLogEndpoints
 {
     public static void MapRequestLogEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/api/RequestLogs").WithTags(nameof(RequestLog));
+        var group = routes.MapGroup("/api/RequestLogs").WithTags("Request/Response Logging");
 
         group.MapGet("/", async (AppDbContext db) =>
         {
@@ -21,7 +21,9 @@ public static class RequestLogEndpoints
 
             return TypedResults.Ok(logs);
         })
-        .WithName("GetAllRequestLogs")
-        .WithOpenApi();
+        .WithName("GetRequestLogs")
+        .WithOpenApi()
+        .WithSummary("Get last 100 Request Logs")
+        .WithDescription("Get last 100 requests information including path, status code, response body...");
     }
 }

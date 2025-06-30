@@ -60,7 +60,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new() { Title = "UserManagementAPI", Version = "v1" });
+    options.SwaggerDoc("v1", new() { Title = "User Management API", Version = "v1" });
 
     // 🔒 Add JWT Bearer definition
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -93,7 +93,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
